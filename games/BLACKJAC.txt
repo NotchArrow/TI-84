@@ -1,0 +1,775 @@
+#define keyPress K
+#define gameState G
+#define bet B
+#define money M
+#define suit S
+#define value V
+#define cardName Str1
+#define profitPercent P
+
+#define fullDeck |LDECK
+#define workingDeck |LWDECK
+#define gameLog |LBREC
+#define playerCards |LPCARD
+#define playerDrawing P
+#define playerScore E
+#define dealerCards |LDCARD
+#define dealerScore F
+#define secretCard Str2
+#define stealAnimPlayed A
+
+#define cardsToDraw C
+#define cardsDrawn D
+
+#define HIT_BUTTON 24
+#define STAND_BUTTON 26
+#define ALL_BUTTON 83
+#define BORROW_BUTTON 102
+#define INCREASE_BUTTON 25
+#define MULT_BUTTON 75
+#define DECREASE_BUTTON 34
+#define DIV_BUTTON 65
+#define QUIT_BUTTON 22
+#define ENTER_BUTTON 105
+#define HOWUP_BUTTON 42
+
+// Graph Setup
+StoreGDB 1
+GridOff
+LabelOff
+AxesOff
+CoordOff
+GridOff
+FnOff 
+PlotsOff 
+ClrDraw
+0→Xmin
+264→Xmax
+⁻164→Ymin
+0→Ymax
+
+// Welcome
+TextColor(BLACK)
+For(X,1,16)
+  Text(⁻1,50,X*11,sub("Always remember.",X,1))
+  For(I,1,300)
+    // delay
+  End
+End
+For(I,1,1000)
+  // delay
+End
+For(Y,Ymin,Ymax,2)
+  Horizontal Y,BLACK
+End
+TextColor(RED)
+For(X,1,29)
+  If X≤16
+  Then
+    Text(⁻1,70,X*11,sub("99% quit before they win BIG.",X,1))
+  Else
+    Text(⁻1,90,(X-16)*11,sub("99% quit before they win BIG.",X,1))
+  End
+  For(I,1,200)
+    // delay
+  End
+End
+For(I,1,3000)
+  // delay
+End
+For(Y,Ymin,Ymax,2)
+  Horizontal Y,WHITE
+End
+
+For(X,1,21)
+  If remainder(X,2)=0
+  Then
+    TextColor(BLACK)
+  Else
+    TextColor(RED)
+  End
+  Text(⁻1,0,X*11,sub("Welcome to \BlackJack!",X,1))
+  For(I,1,100)
+    // delay
+  End
+End
+
+Horizontal ⁻20,BROWN
+TextColor(BLACK)
+Text(30,0,"GOAL: Beat dealer & get near 21.")
+Text(45,0,"BUST: Going over 21 is a loss.")
+TextColor(RED)
+Text(60,0,"[<]     HIT: Take card.")
+Text(75,0,"[>]     STAND: End turn.")
+TextColor(BLACK)
+Text(90,0,"2-10: Value  |  J,Q,K: 10  |  A: 1/11")
+Text(105,0,"DEALER: Must hit until 17+.")
+TextColor(ORANGE)
+Text(⁻1,120,0,"Press Enter to Start!")
+Horizontal ⁻140,BROWN
+TextColor(BLACK)
+Text(150,0,"While playing, press mode to quit.")
+
+Pause 
+ClrDraw
+
+// Card Initialization
+52→dim(fullDeck)
+For(I,1,52)
+  remainder(I-1,13)+1→value
+  value→fullDeck(I)
+End
+
+// Variable Initialization
+1000→money
+100→bet
+3→dim(gameLog)
+Fill(0,gameLog)
+5→dim(playerCards)
+5→dim(dealerCards)
+0→playerScore
+Fill(0,playerCards)
+0→dealerScore
+Fill(0,dealerCards)
+0→stealAnimPlayed
+
+
+// Mainloop
+0→keyPress
+0→gameState
+// Quit on Math button
+While keyPress≠QUIT_BUTTON and gameState≠⁻1
+
+  // 5 Card Charlie
+  If playerScore≤21 and gameState=1 and cardsToDraw=7
+  Then
+    TextColor(ORANGE)
+    Text(50,150,"5 Card Charlie!")
+    21→playerScore
+    2→gameState
+  End
+  // Autostand if at/over 21
+  If playerScore≥21 and gameState=1
+  Then
+    TextColor(BLACK)
+    Text(50,150,"Autostanding")
+    2→gameState
+  End
+
+  // Wait for Keypress
+  0→keyPress
+  If gameState=1
+  Then
+    TextColor(BLACK)
+    Text(35,150,"Playing ("+toString(playerScore)+")     ")
+    TextColor(BROWN)
+    Text(93,0,"[<] Hit | [>] Stand")
+    Repeat keyPress
+      getKey→keyPress
+    End
+  End
+  
+  If gameState=4
+  Then
+    // shift game log
+    For(I,3,1,⁻1)
+      gameLog(I)→gameLog(I+1)
+    End
+    
+    // calculate scoring
+    TextColor(BLACK)
+    Text(35,150,"Playing ("+toString(playerScore)+")     ")
+    Text(65,150,"Dealer ("+toString(dealerScore)+")     ")
+    Text(80,150,"Tallying")
+    If dealerScore≤21 and playerScore≤21 and dealerScore=playerScore
+    Then
+      TextColor(BLACK)
+      Text(⁻1,0,0,"Tie.")
+      Text(⁻1,30,0,"+$0")
+      0→gameLog(1)
+    End
+    If playerScore≤21 and dealerScore>21
+    Then
+      TextColor(GREEN)
+      Text(⁻1,0,0,"Win!")
+      Text(⁻1,30,0,"+$"+toString(bet))
+      money+bet→money
+      bet→gameLog(1)
+    End
+    If playerScore≤21 and dealerScore≤21 and playerScore>dealerScore
+    Then
+      TextColor(GREEN)
+      Text(⁻1,0,0,"Win!")
+      Text(⁻1,30,0,"+$"+toString(bet))
+      money+bet→money
+      bet→gameLog(1)
+    End
+    If playerScore>21
+    Then
+      TextColor(RED)
+      Text(⁻1,0,0,"Bust.")
+      Text(⁻1,30,0,"-$"+toString(bet))
+      money-bet→money
+      ⁻bet→gameLog(1)
+    End
+    If playerScore≤21 and dealerScore≤21 and playerScore<dealerScore
+    Then
+      TextColor(RED)
+      Text(⁻1,0,0,"Lose.")
+      Text(⁻1,30,0,"-$"+toString(bet))
+      money-bet→money
+      ⁻bet→gameLog(1)
+    End
+    TextColor(BLACK)
+    Text(60,0,"Press any button")
+    Text(75,0,"to play again.")
+    
+    TextColor(ORANGE)
+    Text(⁻1,0,100,"Money: $"+toString(money)+"        ")
+    
+    0→keyPress
+    0→gameState
+    Repeat keyPress
+      getKey→keyPress
+    End
+    If keyPress=QUIT_BUTTON
+    Then
+      ⁻1→gameState
+    End
+    0→keyPress
+  End
+
+  // Check Keypresses
+  If keyPress=HIT_BUTTON
+  Then  
+    playerDrawing=1
+    If cardsToDraw<7
+    Then
+      cardsToDraw+1→cardsToDraw
+    End
+  End
+  If keyPress=STAND_BUTTON
+  Then
+    2→gameState
+  End
+
+  // Initialization for each round
+  If gameState=0
+  Then
+    ClrDraw
+    
+    TextColor(ORANGE)
+    Text(⁻1,0,100,"Money: $"+toString(money))
+    If bet>money
+    Then
+      money→bet
+    End
+    
+    TextColor(BROWN)
+    Text(35,190,"Game")
+    Text(50,195,"Log:")
+    For(I,1,3)
+      If gameLog(I)>0
+      Then
+        TextColor(GREEN)
+        Text(50+I*12,195,"+$"+toString(gameLog(I)))
+      End
+      If gameLog(I)<0
+      Then
+        TextColor(RED)
+        Text(50+I*12,195,"-$"+toString(abs(gameLog(I))))
+      End
+      If gameLog(I)=0
+      Then
+        TextColor(BLACK)
+        Text(50+I*12,195,"Tie.")
+      End
+    End
+    Line(185,⁻30,Xmax,⁻30,GRAY)
+    Line(185,⁻30,185,⁻100,GRAY)
+    Line(185,⁻100,Xmax,⁻100,GRAY)
+    
+    TextColor(GREEN)
+    Text(60,0,"[^ or *] Increase Bet.")
+    TextColor(RED)
+    Text(75,0,"[v or /] Decrease Bet.")
+    TextColor(ORANGE)
+    Text(90,0,"[apps] how-up-am-i.net")
+    TextColor(GREEN)
+    Text(105,0,"[5] All In.")
+    Text(120,0,"[0] Steal $10 from a stranger.")
+    TextColor(RED)
+    Text(135,0,"[mode] Quit before you win big.")
+    
+    TextColor(BLACK)
+    Text(150,0,"Enter to place Bet.")
+    // Manage bets
+    0→keyPress
+    Repeat keyPress=ENTER_BUTTON or keyPress=QUIT_BUTTON or keyPress=HOWUP_BUTTON
+      TextColor(ORANGE)
+      Text(⁻1,30,0,"Bet: $"+toString(bet)+"  ")
+      
+      getKey→keyPress
+      If keyPress=QUIT_BUTTON
+      Then
+        ⁻1→gameState
+      End
+      If keyPress=HOWUP_BUTTON
+      Then
+        21→gameState
+      End
+      If keyPress=INCREASE_BUTTON
+      Then
+        bet+10→bet
+      End
+      If keyPress=DECREASE_BUTTON
+      Then
+        bet-10→bet
+      End
+      If keyPress=MULT_BUTTON
+      Then
+        int(bet*2)→bet
+      End
+      If keyPress=DIV_BUTTON
+      Then
+        int(bet/2)→bet
+      End
+      If keyPress=ALL_BUTTON
+      Then
+        money→bet
+        ENTER_BUTTON→keyPress
+      End
+      If keyPress=BORROW_BUTTON
+      Then
+        money+10→money
+        10→bet
+        ENTER_BUTTON→keyPress
+        ClrDraw
+        // weigh on morals
+        If stealAnimPlayed=0
+        Then
+          1→stealAnimPlayed
+          TextColor(RED)
+          For(X,1,46)
+          If X≤18
+          Then
+            Text(⁻1,50,X*11,sub("Thought you could get away with that, did you?",X,1))
+          End
+          If X>18 and X≤38
+          Then
+            Text(⁻1,70,(X-18)*11,sub("Thought you could get away with that, did you?",X,1))
+          End
+          If X>38
+          Then
+            Text(⁻1,90,(X-37)*11,sub("Thought you could get away with that, did you?",X,1))
+          End
+            For(I,1,300)
+              // delay
+            End
+          End 
+          For(I,1,3000)
+            // delay
+          End
+          TextColor(BLACK)
+          For(X,1,41)
+            If X≤20
+            Then
+              Text(110,X*11,sub("Well, yeah you can. I am not your mother.",X,1))
+            End
+            If X>20
+            Then
+              Text(130,(X-20)*11,sub("Well, yeah you can. I am not your mother.",X,1))
+            End
+            For(I,1,100)
+              // delay
+            End
+          End
+          For(I,1,3000)
+            // delay
+          End
+        End
+      End
+      
+      int(bet)→bet
+      If bet>money
+      Then
+        money→bet
+      End
+      If bet<0
+      Then
+        0→bet
+      End
+    End
+    0→keyPress
+    
+    // Confirm round initialization
+    If gameState≠⁻1 and gameState≠21
+    Then
+      1→gameState
+      0→playerDrawing
+      0→playerScore
+      Fill(0,playerCards)
+      0→dealerScore
+      Fill(0,dealerCards)
+      "?"→secretCard
+      10→X
+      0→cardsDrawn
+      4→cardsToDraw
+      fullDeck→workingDeck
+      ClrDraw
+      
+      TextColor(BLACK)
+      Text(20,150,"Shuffling")
+      TextColor(ORANGE)
+      Text(⁻1,0,100,"Bet: $"+toString(bet))
+      Line(90,0,90,⁻18,BROWN)
+      Line(90,⁻18,Xmax,⁻18,BROWN)
+      Line(145,⁻18,145,⁻95,BROWN)
+      For(Y,Ymin,⁻95,2)
+        Horizontal Y,GREEN
+      End
+      TextColor(BLACK)
+      Text(20,150,"Dealing         ")
+    End
+  End
+  
+  // Dealer playing for each round
+  If gameState=2
+  Then
+    TextColor(BLACK)
+    Text(35,150,"Playing ("+toString(playerScore)+")     ")
+    Text(65,150,"Dealer ("+toString(dealerScore)+")     ")
+    0→playerDrawing
+    30→X
+    ⁻110→Y
+    TextColor(GRAY)
+    Text(⁻1,⁻Y,X,secretCard)
+    110→X
+    3→gameState
+  End
+  If gameState=3
+  Then
+    If dealerScore<17 and X≤210
+    Then
+      cardsToDraw+1→cardsToDraw
+    Else
+      4→gameState
+    End
+  End
+
+  While cardsDrawn<cardsToDraw
+    // Generate Card
+    randInt(1,52)→I
+    While workingDeck(I)=⁻1
+      randInt(1,52)→I
+    End
+    
+    ⁻int(⁻I/13)→suit
+    workingDeck(I)→value
+    ⁻1→workingDeck(I)
+    
+    // Generate Card Name
+    toString(value)→cardName
+    If value=11
+    Then
+      "J"→cardName
+      10→value
+    End
+    If value=12
+    Then
+      "Q"→cardName
+      10→value
+    End
+    If value=13
+    Then
+      "K"→cardName
+      10→value
+    End
+    If value=1
+    Then
+      "A"→cardName
+      11→value
+    End
+    
+    // Score Management
+    If playerDrawing
+    Then
+      playerScore+value→playerScore
+      For(I,1,5)
+        If playerCards(I)=0
+        Then
+          value→playerCards(I)
+          6→I
+        End
+      End
+      If playerScore>21
+      Then
+        For(I,1,5)
+          If playerCards(I)=11
+          Then
+            1→playerCards(I)
+            playerScore-10→playerScore
+            6→I
+          End
+        End
+      End
+      ⁻140→Y
+    Else
+      dealerScore+value→dealerScore
+      For(I,1,5)
+        If dealerCards(I)=0
+        Then
+          value→dealerCards(I)
+          6→I
+        End
+      End
+      If dealerScore>21
+      Then
+        For(I,1,5)
+        If dealerCards(I)=11
+          Then
+            1→dealerCards(I)
+            dealerScore-10→dealerScore
+            6→I
+          End
+        End
+      End
+      ⁻110→Y
+    End
+
+    // Render Card
+    For(N,⁻10,30,2)
+      Line(X+N,Y,X+N,Y-16,WHITE)
+    End
+    
+    If suit=1 or suit=4
+    Then
+      TextColor(BLACK)
+      // spades
+      If suit=1
+      Then
+        For(N,0,10)
+          Line(X-0.7*N,Y-10,X+0.7*N,Y-10,BLACK)
+          Line(X-0.7*(10-N),Y+N-10,X+0.7*(10-N),Y+N-10,BLACK)
+        End
+        For(N,0,5)
+          Line(X-N,Y-10-N,X+N,Y-10-N,BLACK)
+          Line(X-3,Y-15+N,X+3,Y-15+N,BLACK)
+        End
+      End
+      // clubs
+      If suit=4 
+      Then
+        For(N,0,4)
+          Line(X-(4-N),Y-4+N,X+(4-N),Y-4+N,BLACK)
+          Line(X-(4-N),Y-4-N,X+(4-N),Y-4-N,BLACK)
+          Line(X-6-(4-N),Y-10+N,X-6+(4-N),Y-10+N,BLACK)
+          Line(X-6-(4-N),Y-10-N,X-6+(4-N),Y-10-N,BLACK)
+          Line(X+6-(4-N),Y-10+N,X+6+(4-N),Y-10+N,BLACK)
+          Line(X+6-(4-N),Y-10-N,X+6+(4-N),Y-10-N,BLACK)
+        End
+        For(N,0,6)
+          Line(X-3,Y-16+N,X+3,Y-16+N,BLACK)
+        End
+      End
+    End
+    If suit=2 or suit=3
+    Then
+      TextColor(RED)
+      // hearts
+      If suit=2
+      Then
+        For(N,0,4)
+          Line(X-7+N,Y-4+N,X-N,Y-4+N,RED)
+          Line(X-7+N,Y-4-N,X-N,Y-4-N,RED)
+          Line(X+N,Y-4+N,X+7-N,Y-4+N,RED)
+          Line(X+N,Y-4-N,X+7-N,Y-4-N,RED)
+        End
+        For(N,0,10)
+          Line(X-0.7*(10-N),Y-5-N,X+0.7*(10-N),Y-5-N,RED)
+        End
+      End
+      // diamonds
+      If suit=3
+      Then
+        For(N,0,8)
+          Line(X-0.75*N,Y-N,X+0.75*N,Y-N,RED)
+          Line(X-0.75*N,Y-16+N,X+0.75*N,Y-16+N,RED)
+        End
+      End
+    End
+    
+    // Draw card value and manage placement
+    X+20→X
+    cardsDrawn+1→cardsDrawn
+    If cardsDrawn=1
+    Then
+    Text(⁻1,⁻Y,X,secretCard)
+      cardName→secretCard
+    Else
+      Text(⁻1,⁻Y,X,cardName)
+    End
+    X+30→X
+    If cardsDrawn=2
+    Then
+      1→playerDrawing
+      10→X
+    End
+    
+    // Exit card generation loop
+  End
+  
+  // how-up-am-i.net
+  If gameState=21
+  Then
+    ClrDraw
+    TextColor(BLACK)
+    Text(0,0,"Welcome to how-up-am-i.net!")
+    Text(15,0,"Remember:")
+    Text(30,0,"you can only be down 100%, but you")
+    Text(45,0,"can be up SO \much more!")
+    Text(150,0,"Press [apps] to cycle site pages")
+    
+    0→keyPress
+    Repeat keyPress=HOWUP_BUTTON
+      getKey→keyPress
+    End
+    ClrDraw
+    
+    TextColor(ORANGE)
+    Text(⁻1,0,0,"You started with:")
+    Text(⁻1,30,0,"$1000")
+    Text(⁻1,70,0,"And now have:")
+    Text(⁻1,100,0,"$"+toString(money))
+    TextColor(BLACK)
+    Text(150,0,"Press [apps] to cycle site pages")
+    
+    0→keyPress
+    Repeat keyPress=HOWUP_BUTTON
+      getKey→keyPress
+    End
+    ClrDraw
+    
+    TextColor(ORANGE)
+    Text(⁻1,0,0,"Advertisement")
+    TextColor(BLACK)
+    Text(30,0,"Suck at \BlackJack?")
+    Text(45,0,"Hate losing?")
+    Text(60,0,"Have non-gambling friends?")
+    TextColor(ORANGE)
+    Text(⁻1,85,0,"Try WORDLE TODAY!")
+    
+    TextColor(BLACK)
+    Text(150,0,"Press [apps] to go to content")
+    
+    0→keyPress
+    Repeat keyPress=HOWUP_BUTTON
+      getKey→keyPress
+    End
+    ClrDraw
+    
+    int((money-1000)/10)→profitPercent
+    If profitPercent>0
+    Then
+      TextColor(GREEN)
+      Text(⁻1,70,0,"UP! +"+toString(profitPercent)+"%")
+      Text(110,0,"All In Again!!!")
+    End
+    If profitPercent<0
+    Then
+      TextColor(RED)
+      Text(⁻1,70,0,"DOWN. "+toString(profitPercent)+"%")
+      TextColor(GREEN)
+      Text(110,0,"We calculated.")
+      Text(125,0,"You can make it back.")
+    End
+    If profitPercent=0
+    Then
+      TextColor(BLACK)
+      Text(⁻1,70,0,"No profit. Yet.")
+      Text(110,0,"Do you even gamble bro?")
+    End
+    TextColor(BLACK)
+    Text(150,0,"Press [apps] to cycle site pages")
+    
+    0→keyPress
+    Repeat keyPress=HOWUP_BUTTON
+      getKey→keyPress
+    End
+    ClrDraw
+    
+    TextColor(ORANGE)
+    Text(⁻1,0,0,"Advertisement")
+    TextColor(BLACK)
+    Text(30,0,"Suck at \BlackJack?")
+    Text(45,0,"Have no friends for WORDLE?")
+    Text(60,0,"Enjoy a bomb every so often?")
+    TextColor(ORANGE)
+    Text(⁻1,85,0,"Try MINESWEEPER TODAY!")
+    
+    TextColor(BLACK)
+    Text(150,0,"Press [apps] to go to content")
+    
+    0→keyPress
+    Repeat keyPress=HOWUP_BUTTON
+      getKey→keyPress
+    End
+    ClrDraw
+    
+    Text(0,0,"Leaving how-up-am-i.net")
+    Text(15,0,"Thank you for using our site.")
+    Text(30,0,"Please gamble irresponsibly.")
+    If stealAnimPlayed
+    Then
+      TextColor(RED)
+      Text(60,0,"(And stop stealing from strangers)")
+    End
+    If stealAnimPlayed=0
+    Then
+      TextColor(GREEN)
+      Text(60,0,"(Thx 4 not stealing from strangers)")
+    End
+    TextColor(BLACK)
+    Text(150,0,"Press [apps] to exit the site")
+    
+    0→keyPress
+    Repeat keyPress=HOWUP_BUTTON
+      getKey→keyPress
+    End
+    ClrDraw
+    
+    0→gameState
+    0→keyPress
+  End
+
+  // Exit main program loop
+End
+
+
+// Program Cleanup
+ClrDraw
+ZStandard 
+RecallGDB 1
+DelVar fullDeck
+DelVar workingDeck
+DelVar gameLog
+DelVar cardName
+DelVar secretCard
+DelVar playerCards
+DelVar dealerCards
+0→stealAnimPlayed
+0→keyPress
+0→gameState
+0→money
+0→profitPercent
+0→bet
+0→suit
+0→value
+0→playerScore
+0→dealerScore
+0→cardsToDraw
+0→cardsDrawn
+0→X
+0→Y
+0→N
+0→I
