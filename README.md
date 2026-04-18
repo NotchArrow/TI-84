@@ -7,10 +7,10 @@ To install these files, you will need to transfer the `.8xp` files to your calcu
 If you'd like to modify these games, then download the `.txt` files (use the `.8xp` if they're not avaliable) and edit them using a program like [TokenIDE](https://www.ticalc.org/archives/files/fileinfo/433/43315.html). Using an external editor allows you to assign compile-time macros. The functionality extends to commenting code, indenting nested blocks, and accessing proper variable names outside of the TI Basic programming language.
 
 ## About the Games
-### BlackJack
+### Blackjack
 This game was created using the TokenIDE, which provided better code organization and allowed for the creation of easter eggs and polishing throughout the game.
 
-![BlackJack Image](https://github.com/user-attachments/assets/512d4207-05f4-4941-a390-45fe6db60f9d)
+![Blackjack Image](https://github.com/user-attachments/assets/512d4207-05f4-4941-a390-45fe6db60f9d)
 
 ### Minesweeper
 The first of the games created on this list. It creates a grid on the graph screen and uses color-coded symbols to manage small tile sizes.
